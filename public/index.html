@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News</title>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: black;
+      overflow: hidden;
+    }
+    #news-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    #news-wrapper {
+      position: absolute;
+      white-space: nowrap;
+      will-change: transform;
+    }
+    #news-text {
+      font-size: 50vh;
+      color: orange;
+      font-family: 'DotGothic16', monospace;
+      text-shadow:
+        0 0 5px orange,
+        0 0 10px orange,
+        0 0 20px red;
+      line-height: 1;
+    }
+
+    /* グリッドオーバーレイ */
+    #grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 8px 8px;
+      z-index: 999;
+    }
+
+    .highlight {
+  animation: blink 0.5s infinite;
+  text-shadow:
+        0 0 5px crimson,
+        0 0 10px crimson,
+        0 0 20px midiumvioretred;
+      line-height: 1;
+}
+  </style>
+</head>
+<body>
+  <div id="news-container">
+    <div id="news-wrapper">
+      <div id="news-text">読み込み中...</div>
+    </div>
+    <div id="grid-overlay"></div>
+  </div>
+
+  <script>
+
+    function highlightKeywords(text) {
+  const keywords = ["地震", "漏洩", "漏えい", "津波", "台風", "意識不明", "行方不明", "墜落", "テロ", "戦争", "核戦争", "死傷", "殺害", "倒壊", "台風", "速報", "台風", "冠水", "水没", "台風", "渋滞", "重体", "死亡", "事故", "警報", "避難"];
+  keywords.forEach(word => {
+    const re = new RegExp(word, "g");
+    text = text.replace(re, `<span class="highlight">${word}</span>`);
+  });
+  return text;
+}
+    const endpoint = "/news";
+    const scrollStep = 30;
+    const fps = 20;
+    const wrapper = document.getElementById("news-wrapper");
+    const textEl = document.getElementById("news-text");
+
+    let x = window.innerWidth;
+    let intervalId = null;
+
+    function startScroll() {
+      clearInterval(intervalId);
+      x = window.innerWidth;
+
+      intervalId = setInterval(() => {
+        const textWidth = textEl.offsetWidth;
+        x -= scrollStep;
+
+        if (x < -textWidth) {
+          x = window.innerWidth;
+        }
+
+        wrapper.style.transform = `translateX(${x}px)`;
+      }, 1000 / fps);
+    }
+
+    async function fetchNews() {
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error("HTTPエラー: " + res.status);
+        const data = await res.json();
+        const headlines = data.map(item => item.title);
+        textEl.textContent = headlines.join("　　　　　");
+        startScroll();
+      } catch (e) {
+        console.error("ニュース取得失敗:", e);
+        textEl.textContent = "ニュースを取得できませんでした";
+        startScroll();
+      }
+    }
+
+    startScroll();
+    fetchNews();
+    setInterval(fetchNews, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
