@@ -1,128 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>News</title>
+  <meta charset="UTF-8">
+  <title>Web神託マシン</title>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
+    body {
       background-color: black;
-      overflow: hidden;
-    }
-    #news-container {
-      position: relative;
-      width: 100%;
+      color: cyan;
+      font-family: 'DotGothic16', monospace;
+      font-size: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       height: 100vh;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-    }
-    #news-wrapper {
-      position: absolute;
-      white-space: nowrap;
-      will-change: transform;
-    }
-    #news-text {
-      font-size: 50vh;
-      color: orange;
-      font-family: 'DotGothic16', monospace;
-      text-shadow:
-        0 0 5px orange,
-        0 0 10px orange,
-        0 0 20px red;
-      line-height: 1;
     }
 
-    /* グリッドオーバーレイ */
-    #grid-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-      background-size: 8px 8px;
-      z-index: 999;
+    h1 {
+      color: yellow;
+      margin-bottom: 30px;
     }
 
-    .highlight {
-  animation: blink 0.5s infinite;
-  text-shadow:
-        0 0 5px crimson,
-        0 0 10px crimson,
-        0 0 20px midiumvioretred;
-      line-height: 1;
-}
+    #oracle {
+      white-space: pre-wrap;
+      text-align: center;
+      margin: 20px;
+    }
+
+    button {
+      background-color: transparent;
+      color: magenta;
+      border: 2px solid magenta;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: magenta;
+      color: black;
+    }
+
+    .blink {
+      animation: blink 1s step-start 0s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
   </style>
 </head>
 <body>
-  <div id="news-container">
-    <div id="news-wrapper">
-      <div id="news-text">読み込み中...</div>
-    </div>
-    <div id="grid-overlay"></div>
-  </div>
+  <h1>＊ Web Oracle ＊</h1>
+  <div id="oracle">『神託を受けるには、ボタンを押してください』</div>
+  <button onclick="generateOracle()">神託を受ける</button>
 
   <script>
+    const subjects = ["風", "神", "電気羊", "記憶", "空白", "影", "音", "沈黙", "未来", "亡霊"];
+    const verbs = ["は語る", "が踊る", "を喰らう", "が崩れる", "に祈る", "が目覚める", "は微笑む"];
+    const objects = ["空の果てで", "電子の海で", "誰かの夢の中で", "忘却の底で", "記号の間で", "時間の裏側で"];
 
-    function highlightKeywords(text) {
-  const keywords = ["地震", "漏洩", "漏えい", "津波", "台風", "意識不明", "行方不明", "墜落", "テロ", "戦争", "核戦争", "死傷", "殺害", "倒壊", "台風", "速報", "台風", "冠水", "水没", "台風", "渋滞", "重体", "死亡", "事故", "警報", "避難"];
-  keywords.forEach(word => {
-    const re = new RegExp(word, "g");
-    text = text.replace(re, `<span class="highlight">${word}</span>`);
-  });
-  return text;
-}
-    const endpoint = "/news";
-    const scrollStep = 30;
-    const fps = 20;
-    const wrapper = document.getElementById("news-wrapper");
-    const textEl = document.getElementById("news-text");
+    function generateOracle() {
+      const s = randomChoice(subjects);
+      const v = randomChoice(verbs);
+      const o = randomChoice(objects);
 
-    let x = window.innerWidth;
-    let intervalId = null;
+      const oracleText = `『${s}${v}${o}』`;
 
-    function startScroll() {
-      clearInterval(intervalId);
-      x = window.innerWidth;
+      document.getElementById("oracle").textContent = oracleText;
 
-      intervalId = setInterval(() => {
-        const textWidth = textEl.offsetWidth;
-        x -= scrollStep;
-
-        if (x < -textWidth) {
-          x = window.innerWidth;
-        }
-
-        wrapper.style.transform = `translateX(${x}px)`;
-      }, 1000 / fps);
+      // 簡易ビープ音
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
     }
 
-    async function fetchNews() {
-      try {
-        const res = await fetch(endpoint);
-        if (!res.ok) throw new Error("HTTPエラー: " + res.status);
-        const data = await res.json();
-        const headlines = data.map(item => item.title);
-        textEl.textContent = headlines.join("　　　　　");
-        startScroll();
-      } catch (e) {
-        console.error("ニュース取得失敗:", e);
-        textEl.textContent = "ニュースを取得できませんでした";
-        startScroll();
-      }
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
     }
-
-    startScroll();
-    fetchNews();
-    setInterval(fetchNews, 10 * 60 * 1000);
   </script>
 </body>
 </html>
